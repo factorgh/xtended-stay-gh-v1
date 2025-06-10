@@ -16,7 +16,7 @@ const ExclusiveOffers = () => {
           subTitle="Take advantage of our limited-time offers and special packages to enhance your stay and create unforgettable memories."
         />
         <button
-          onClick={() => navigate("/room")}
+          onClick={() => navigate("/rooms")}
           className="group flex items-center gap-2 font-medium cursor-pointer max-md:mt-12"
         >
           View All Offers
