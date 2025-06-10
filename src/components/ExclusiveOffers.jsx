@@ -45,7 +45,10 @@ const ExclusiveOffers = () => {
                 Expires {item.expiryDate}
               </p>
             </div>
-            <button className="flex items-center gap-2 font-medium cursor-pointer mt-4 mb-5">
+            <button
+              onClick={() => navigate("/rooms")}
+              className="flex items-center gap-2 font-medium cursor-pointer mt-4 mb-5"
+            >
               View Offers
               <img
                 className="invert group-hover:translate-x-1 transition-all"
