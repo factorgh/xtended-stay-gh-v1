@@ -16,6 +16,8 @@ import MyBookings from "./pages/MyBookings";
 import Loader from "./components/Loader";
 import About from "./pages/About";
 import Experience from "./pages/Experience";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 const App = () => {
   // Check Is Route Starts With Owner
@@ -30,6 +32,8 @@ const App = () => {
       {showHotelReg && <HotelReg />}
       <div className="min-h-[70vh]">
         <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
           <Route path="/rooms" element={<AllRooms />} />
           <Route path="/rooms/:id" element={<RoomDetails />} />
