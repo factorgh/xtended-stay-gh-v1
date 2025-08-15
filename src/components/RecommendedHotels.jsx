@@ -11,7 +11,7 @@ const RecommendedHotels = () => {
   const filterHotels = () => {
     const filteredHotels = rooms
       .slice()
-      .filter((room) => searchedCities.includes(room.hotel.city));
+      .filter((room) => searchedCities.includes(room.city));
     setRecommended(filteredHotels);
   };
 

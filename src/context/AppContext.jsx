@@ -1,56 +1,104 @@
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
-import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { assets } from "../assets/assets";
+import paymentService from "../services/paymentService";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
-const AppContext = createContext();
+export const AppContext = createContext();
+
+export const useAppContext = () => {
+  return useContext(AppContext);
+};
 
 export const AppProvider = ({ children }) => {
-  const currency = import.meta.env.VITE_CURRENCY || "$";
+  const currency = "GH₵";
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { getToken } = useAuth();
-
+  const [user, setUser] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [showHotelReg, setShowHotelReg] = useState(false);
   const [rooms, setRooms] = useState([]);
-  const [searchedCities, setSearchedCities] = useState([]); // max 3 recent searched cities
+  const [searchedCities, setSearchedCities] = useState([]);
 
+  // Facility icons
   const facilityIcons = {
     "Free WiFi": assets.freeWifiIcon,
+    "Air Conditioning": assets.airconIcon,
+    "Pool Access": assets.poolIcon,
     "Free Breakfast": assets.freeBreakfastIcon,
     "Room Service": assets.roomServiceIcon,
-    "Mountain View": assets.mountainIcon,
-    "Pool Access": assets.poolIcon,
   };
 
-  const fetchUser = async () => {
+  // Authentication functions
+  const login = async (email, password) => {
     try {
-      const { data } = await axios.get("/api/user", {
-        headers: { Authorization: `Bearer ${await getToken()}` },
-      });
+      const { data } = await axios.post("/api/auth/login", { email, password });
       if (data.success) {
-        setIsOwner(data.role === "hotelOwner");
-        setSearchedCities(data.recentSearchedCities);
-      } else {
-        // Retry Fetching User Details after 5 seconds
-        // Useful when user creates account using email & password
-        setTimeout(() => {
-          fetchUser();
-        }, 2000);
+        localStorage.setItem("token", data.token);
+        setUser(data.user);
+        setIsOwner(data.user.role === "admin");
+        return true;
       }
+      return false;
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || "Login failed");
+      return false;
     }
   };
 
+  const register = async (name, email, password, role) => {
+    try {
+      const { data } = await axios.post("/api/auth/register", {
+        name,
+        email,
+        password,
+        role,
+      });
+      console.log(data);
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        setUser(data.user);
+        setIsOwner(data.user.role === "admin");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Registration failed");
+      return false;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    setIsOwner(false);
+    navigate("/");
+  };
+
+  const getToken = () => {
+    return localStorage.getItem("token");
+  };
+
+  // Add token to axios requests
+  axios.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
   const fetchRooms = async () => {
     try {
-      const { data } = await axios.get("/api/rooms");
+      const { data } = await axios.get("/api/rooms", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      console.log(data);
       console.log(data.rooms);
       if (data.success) {
         setRooms(data.rooms);
@@ -58,15 +106,29 @@ export const AppProvider = ({ children }) => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.log(error);
       toast.error(error.message);
     }
   };
 
   useEffect(() => {
-    if (user) {
-      fetchUser();
+    const token = localStorage.getItem("token");
+    if (token) {
+      axios
+        .get("/api/auth/me")
+        .then(({ data }) => {
+          if (data.success) {
+            setUser(data.user);
+            setIsOwner(data.user.role === "admin");
+          }
+        })
+        .catch((error) => {
+          localStorage.removeItem("token");
+          setUser(null);
+          setIsOwner(false);
+        });
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     fetchRooms();
@@ -76,7 +138,7 @@ export const AppProvider = ({ children }) => {
     currency,
     navigate,
     user,
-    getToken,
+    setUser,
     isOwner,
     setIsOwner,
     axios,
@@ -87,9 +149,12 @@ export const AppProvider = ({ children }) => {
     setRooms,
     searchedCities,
     setSearchedCities,
+    login,
+    register,
+    logout,
+    paymentService,
+    getToken,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-export const useAppContext = () => useContext(AppContext);

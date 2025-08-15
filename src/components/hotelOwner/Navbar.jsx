@@ -1,15 +1,25 @@
 import React from "react";
-import { assets } from "../../assets/assets";
-import { UserButton } from "@clerk/clerk-react";
-import { Link } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    navigate("/");
+  };
   return (
     <div className="flex items-center justify-between px-4 md:px-8 border-b border-gray-300 py-3 bg-white transition-all duration-300">
       <Link to="/">
-        <h3 className="h-9 invert opacity-80">Xtended Stay</h3>
+        <h3 className="h-9 text-black font-bold">Xtended Stay</h3>
       </Link>
-      <UserButton />
+      {/* Todo add logout button */}
+      <button
+        className="bg-black text-white px-4 py-2 rounded"
+        onClick={handleLogout}
+      >
+        Logout
+      </button>
     </div>
   );
 };

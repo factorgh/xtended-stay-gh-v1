@@ -5,7 +5,7 @@ import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
 
 const MyBookings = () => {
-  const { axios, getToken, user } = useAppContext();
+  const { axios, getToken, user, paymentService } = useAppContext();
   const [bookings, setBookings] = useState([]);
 
   const fetchUserBookings = async () => {
@@ -19,26 +19,47 @@ const MyBookings = () => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.log(error);
       toast.error(error.message);
     }
   };
 
   const handlePayment = async (bookingId) => {
     try {
-      const { data } = await axios.post(
-        "/api/bookings/stripe-payment",
-        { bookingId },
-        { headers: { Authorization: `Bearer ${await getToken()}` } }
-      );
-      if (data.success) {
-        console.log(data.url);
-        window.location.href = data.url;
+      const paymentData = await paymentService.initializePayment(bookingId);
+
+      if (paymentData.success) {
+        // Initialize Paystack payment
+        const handler = window.PaystackPop.setup({
+          key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+          email: user.email,
+          amount: paymentData.amount * 100, // Convert to kobo
+          currency: paymentData.currency,
+          ref: paymentData.reference,
+          callback: async (response) => {
+            try {
+              const verification = await paymentService.verifyPayment(
+                response.reference
+              );
+              if (verification.success) {
+                toast.success("Payment successful!");
+                fetchUserBookings(); // Refresh bookings list
+              } else {
+                toast.error(verification.message);
+              }
+            } catch (error) {
+              toast.error("Payment verification failed");
+            }
+          },
+          onClose: () => {
+            toast.error("Payment cancelled");
+          },
+        });
+        handler.openIframe();
       } else {
-        console.log("error data", data);
-        toast.error(data.message);
+        toast.error(paymentData.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
     }
   };

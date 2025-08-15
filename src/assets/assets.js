@@ -204,14 +204,14 @@ export const userBookingsDummyData = [
         "totalPrice": 299,
         "guests": 1,
         "status": "pending",
-        "paymentMethod": "Stripe",
+        "paymentMethod": "Paystack",
         "isPaid": true,
         "createdAt": "2025-04-10T06:42:01.529Z",
         "updatedAt": "2025-04-10T06:43:54.520Z",
         "__v": 0
     },
     {
-        "_id": "67f76829994a731e97d3b8c3",
+        "_id": "67f76839994a731e97d3b8cf",
         "user": userDummyData,
         "room": roomsDummyData[0],
         "hotel": hotelDummyData,
@@ -225,24 +225,8 @@ export const userBookingsDummyData = [
         "createdAt": "2025-04-10T06:41:45.873Z",
         "updatedAt": "2025-04-10T06:41:45.873Z",
         "__v": 0
-    },
-    {
-        "_id": "67f76810994a731e97d3b8b4",
-        "user": userDummyData,
-        "room": roomsDummyData[3],
-        "hotel": hotelDummyData,
-        "checkInDate": "2025-04-11T00:00:00.000Z",
-        "checkOutDate": "2025-04-12T00:00:00.000Z",
-        "totalPrice": 199,
-        "guests": 1,
-        "status": "pending",
-        "paymentMethod": "Pay At Hotel",
-        "isPaid": false,
-        "createdAt": "2025-04-10T06:41:20.501Z",
-        "updatedAt": "2025-04-10T06:41:20.501Z",
-        "__v": 0
     }
-]
+];
 
 // Dashboard Dummy Data
 export const dashboardDummyData = {

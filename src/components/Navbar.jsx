@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { assets } from "../assets/assets";
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { useClerk, UserButton } from "@clerk/clerk-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 
 const BookIcon = () => (
@@ -35,9 +33,9 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const { openSignIn } = useClerk();
-  const { user, setShowHotelReg, isOwner, navigate } = useAppContext();
+  const { user, logout, setShowHotelReg, isOwner } = useAppContext();
 
   useEffect(() => {
     if (location.pathname !== "/") {
@@ -56,6 +54,17 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [location.pathname]);
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 w-full flex items-center justify-between px-4 md:px-16 lg:px-24 xl:px-32 transition-all duration-500 z-50 ${
@@ -64,7 +73,7 @@ const Navbar = () => {
           : "py-4 md:py-6"
       }`}
     >
-      <Link to="/">
+      <Link to="/" onClick={scrollToTop}>
         <h3 className={`h-9 text-white ${isScrolled && "invert opacity-80"}`}>
           Xtended Stay Gh
         </h3>
@@ -72,13 +81,13 @@ const Navbar = () => {
 
       <div className="hidden md:flex items-center gap-4 lg:gap-8">
         {navLinks.map((navLink, index) => (
-          <NavLink
+          <Link
             key={index}
             to={navLink.path}
+            onClick={scrollToTop}
             className={`group flex flex-col gap-0.5 ${
               isScrolled ? "text-gray-700" : "text-white"
             }`}
-            onClick={() => scrollTo(0, 0)}
           >
             {navLink.name}
             <div
@@ -86,108 +95,178 @@ const Navbar = () => {
                 isScrolled ? "bg-gray-700" : "bg-white"
               } h-0.5 w-0 group-hover:w-full transition-all duration-300`}
             ></div>
-          </NavLink>
+          </Link>
         ))}
-        {user && (
-          <button
-            className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
-              isScrolled ? "text-black" : "text-white"
-            } transition-all`}
-            onClick={() =>
-              isOwner ? navigate("/owner") : setShowHotelReg(true)
-            }
-          >
-            {isOwner ? "Dashboard" : "List Your Hotel"}
-          </button>
+
+        {!user ? (
+          <>
+            <Link
+              to="/login"
+              className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
+                isScrolled ? "text-black" : "text-white"
+              }`}
+            >
+              Login
+            </Link>
+            <Link
+              to="/register"
+              className={`bg-indigo-600 text-white px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
+                isScrolled && "bg-indigo-700"
+              }`}
+            >
+              Register
+            </Link>
+          </>
+        ) : (
+          <div className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className={`flex items-center text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium ${
+                isScrolled ? "text-gray-700" : "text-white"
+              }`}
+            >
+              <span className="mr-2">{user.name}</span>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {isDropdownOpen && (
+              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                <div className="py-1">
+                  <Link
+                    to="/my-bookings"
+                    onClick={scrollToTop}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    My Bookings
+                  </Link>
+                  {isOwner && (
+                    <Link
+                      to="/owner"
+                      onClick={scrollToTop}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Dashboard
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="hidden md:flex items-center gap-4">
-        <img
-          src={assets.searchIcon}
-          alt="search"
-          className={`${
-            isScrolled && "invert"
-          } h-7 transition-all duration-500`}
-        />
-        {user ? (
-          <UserButton>
-            <UserButton.MenuItems>
-              <UserButton.Action
-                label="My Bookings"
-                labelIcon={<BookIcon />}
-                onClick={() => navigate("/my-bookings")}
-              />
-            </UserButton.MenuItems>
-          </UserButton>
-        ) : (
-          <button
-            onClick={openSignIn}
-            className="bg-black text-white px-8 py-2.5 rounded-full ml-4 transition-all duration-500 cursor-pointer"
-          >
-            Login
-          </button>
-        )}
-      </div>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        className="md:hidden"
+      >
+        <svg
+          className={`h-6 w-6 ${isScrolled ? "text-gray-700" : "text-white"}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          {isMenuOpen ? (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          ) : (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          )}
+        </svg>
+      </button>
 
       {/* Mobile Menu */}
-      <div className="flex items-center gap-3 md:hidden">
-        <UserButton />
-        <img
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          src={assets.menuIcon}
-          alt=""
-          className={`${isScrolled && "invert"} h-4`}
-        />
-      </div>
+      {isMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-lg">
+          <div className="px-4 py-3">
+            {navLinks.map((navLink) => (
+              <Link
+                key={navLink.path}
+                to={navLink.path}
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  scrollToTop();
+                }}
+                className="block py-2 text-gray-700 hover:text-indigo-600"
+              >
+                {navLink.name}
+              </Link>
+            ))}
 
-      <div
-        className={`fixed top-0 left-0 w-full h-screen bg-white text-base flex flex-col md:hidden items-center justify-center gap-6 font-medium text-gray-800 transition-all duration-500 ${
-          isMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <button
-          className="absolute top-4 right-4"
-          onClick={() => setIsMenuOpen(false)}
-        >
-          <img src={assets.closeMenu} alt="close-menu" className="h-6.5" />
-        </button>
-
-        {navLinks.map((navLink) => (
-          <NavLink
-            key={navLink.name}
-            to={navLink.path}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            {navLink.name}
-          </NavLink>
-        ))}
-
-        {user && (
-          <>
-            <NavLink to="/my-bookings" onClick={() => setIsMenuOpen(false)}>
-              My Bookings
-            </NavLink>
-            <button
-              className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all"
-              onClick={() =>
-                isOwner ? navigate("/owner") : setShowHotelReg(true)
-              }
-            >
-              {isOwner ? "Dashboard" : "List Your Hotel"}
-            </button>
-          </>
-        )}
-
-        {!user && (
-          <button
-            onClick={openSignIn}
-            className="bg-black text-white px-8 py-2.5 rounded-full ml-4 transition-all duration-500"
-          >
-            Login
-          </button>
-        )}
-      </div>
+            {!user ? (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block py-2 text-gray-700 hover:text-indigo-600"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block py-2 text-gray-700 hover:text-indigo-600"
+                >
+                  Register
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/my-bookings"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block py-2 text-gray-700 hover:text-indigo-600"
+                >
+                  My Bookings
+                </Link>
+                {isOwner && (
+                  <Link
+                    to="/owner"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block py-2 text-gray-700 hover:text-indigo-600"
+                  >
+                    Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="block py-2 text-gray-700 hover:text-indigo-600"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
