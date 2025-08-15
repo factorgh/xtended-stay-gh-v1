@@ -14,12 +14,12 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const { data } = await axios.get("/api/bookings", {
+      const { data } = await axios.get("/api/bookings/admin/dashboard", {
         headers: { Authorization: `Bearer ${await getToken()}` },
       });
       console.log(data);
       if (data.success) {
-        setDashboardData(data.dashboardData);
+        setDashboardData(data);
       } else {
         toast.error(data.message);
       }
@@ -95,7 +95,7 @@ const Dashboard = () => {
             {dashboardData?.bookings.map((item, index) => (
               <tr key={index}>
                 <td className="py-3 px-4 text-gray-700 border-t border-gray-300">
-                  {item.user.username}
+                  {item.user.name}
                 </td>
                 <td className="py-3 px-4 text-gray-400 border-t border-gray-300 max-sm:hidden">
                   {item.room.roomType}
