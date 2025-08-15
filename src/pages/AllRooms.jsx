@@ -115,7 +115,7 @@ const AllRooms = () => {
   const filterDestination = (room) => {
     const destination = searchParams.get("destination");
     if (!destination) return true;
-    return room.hotel.city.toLowerCase().includes(destination.toLowerCase());
+    return room.toLowerCase().includes(destination.toLowerCase());
   };
 
   // Filter and sort rooms based on the selected filters and sort option
@@ -169,7 +169,6 @@ const AllRooms = () => {
               className="max-h-65 md:w-1/2 rounded-xl shadow-lg object-cover cursor-pointer"
             />
             <div className="md:w-1/2 flex flex-col gap-2">
-              <p className="text-gray-500">{room.city}</p>
               <p
                 onClick={() => {
                   navigate(`/rooms/${room._id}`);
@@ -178,7 +177,7 @@ const AllRooms = () => {
                 className="text-gray-800 text-3xl font-playfair cursor-pointer"
                 title="View Room Details"
               >
-                {room?.name}
+                {room?.roomType}
               </p>
               <div className="flex items-center">
                 <StarRating />
@@ -186,7 +185,7 @@ const AllRooms = () => {
               </div>
               <div className="flex items-center gap-1 text-gray-500 mt-2 text-sm">
                 <img src={assets.locationIcon} alt="location-icon" />
-                <span>{room.address}</span>
+                <span>Spintex</span>
               </div>
               {/* Room Amenities */}
               <div className="flex flex-wrap items-center mt-3 mb-6 gap-4">
