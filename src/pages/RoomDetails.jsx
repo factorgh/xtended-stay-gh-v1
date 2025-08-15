@@ -144,9 +144,9 @@ const RoomDetails = () => {
           {/* Room Details */}
           <div>
             <div className="mb-4">
-              <p className="text-gray-500">{room.hotel.city}</p>
+              <p className="text-gray-500">Spintex</p>
               <h2 className="text-3xl font-bold text-gray-900">
-                {room.hotel.name}
+                {room.roomType}
               </h2>
               <div className="flex items-center gap-2 mt-2">
                 <StarRating />
