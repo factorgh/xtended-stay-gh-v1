@@ -153,7 +153,7 @@ const MyBookings = () => {
               {paymentData && (
                 <div className="mt-4">
                   <PaystackButton
-                    publicKey={import.meta.env.VITE_PAYSTACK_PUBLIC_KEY}
+                    publicKey={import.meta.env.VITE_PAYSTACK_PUBLIC}
                     email={paymentData.email}
                     amount={paymentData.amount}
                     currency={paymentData.currency}
