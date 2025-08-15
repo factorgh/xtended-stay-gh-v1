@@ -86,6 +86,12 @@ const RoomDetails = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+
+    if (!user) {
+      toast.error("Please login to book a room");
+      navigate("/login");
+      return;
+    }
     if (!isAvailable) return checkAvailability();
 
     const payNow = window.confirm(
