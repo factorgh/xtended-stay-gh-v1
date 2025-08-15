@@ -3,15 +3,28 @@ import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
+import { PaystackButton } from "react-paystack";
+import { useNavigate } from "react-router-dom";
 
 const MyBookings = () => {
-  const { axios, getToken, user, paymentService } = useAppContext();
+  const { axios, user, paymentService } = useAppContext();
   const [bookings, setBookings] = useState([]);
+  const token = localStorage.getItem("token");
+
+  const [paymentData, setPaymentData] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedPaymentData = localStorage.getItem("paymentData");
+    if (storedPaymentData) {
+      setPaymentData(JSON.parse(storedPaymentData));
+    }
+  }, []);
 
   const fetchUserBookings = async () => {
     try {
       const { data } = await axios.get("/api/bookings/user", {
-        headers: { Authorization: `Bearer ${await getToken()}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (data.success) {
         setBookings(data.bookings);
@@ -24,44 +37,27 @@ const MyBookings = () => {
     }
   };
 
-  const handlePayment = async (bookingId) => {
-    try {
-      const paymentData = await paymentService.initializePayment(bookingId);
+  const handlePayment = (bookingId) => {
+    const booking = bookings.find((b) => b._id === bookingId);
+    if (!booking) return toast.error("Booking not found");
 
-      if (paymentData.success) {
-        // Initialize Paystack payment
-        const handler = window.PaystackPop.setup({
-          key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-          email: user.email,
-          amount: paymentData.amount * 100, // Convert to kobo
-          currency: paymentData.currency,
-          ref: paymentData.reference,
-          callback: async (response) => {
-            try {
-              const verification = await paymentService.verifyPayment(
-                response.reference
-              );
-              if (verification.success) {
-                toast.success("Payment successful!");
-                fetchUserBookings(); // Refresh bookings list
-              } else {
-                toast.error(verification.message);
-              }
-            } catch (error) {
-              toast.error("Payment verification failed");
-            }
-          },
-          onClose: () => {
-            toast.error("Payment cancelled");
-          },
-        });
-        handler.openIframe();
-      } else {
-        toast.error(paymentData.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
+    const payNow = window.confirm(
+      "Would you like to pay now with Paystack? Click Cancel to pay at hotel."
+    );
+    if (!payNow) return;
+
+    const paystackPayload = {
+      email: user.email,
+      amount: Number(booking.totalPrice) * 100,
+      currency: "GHS",
+      reference: `booking_${bookingId}_${Date.now()}`,
+    };
+
+    setPaymentData(paystackPayload);
+    localStorage.setItem(
+      `paymentData_${bookingId}`,
+      JSON.stringify(paystackPayload)
+    );
   };
 
   useEffect(() => {
@@ -111,7 +107,7 @@ const MyBookings = () => {
                   <img src={assets.guestsIcon} alt="guests-icon" />
                   <span>Guests: {booking.guests}</span>
                 </div>
-                <p className="text-base">Total: ${booking.totalPrice}</p>
+                <p className="text-base">Total: GH₵{booking.totalPrice}</p>
               </div>
             </div>
 
@@ -145,13 +141,43 @@ const MyBookings = () => {
                   {booking.isPaid ? "Paid" : "Unpaid"}
                 </p>
               </div>
-              {!booking.isPaid && (
+              {!booking.isPaid && !paymentData && (
                 <button
                   onClick={() => handlePayment(booking._id)}
                   className="px-4 py-1.5 mt-4 text-xs border border-gray-400 rounded-full hover:bg-gray-50 transition-all cursor-pointer"
                 >
                   Pay Now
                 </button>
+              )}
+
+              {paymentData && (
+                <div className="mt-4">
+                  <PaystackButton
+                    publicKey={import.meta.env.VITE_PAYSTACK_PUBLIC_KEY}
+                    email={paymentData.email}
+                    amount={paymentData.amount}
+                    currency={paymentData.currency}
+                    reference={paymentData.reference}
+                    onSuccess={async (response) => {
+                      const verification = await paymentService.verifyPayment(
+                        response.reference
+                      );
+                      if (verification.success) {
+                        toast.success("Payment successful!");
+                        localStorage.removeItem("paymentData"); // ✅ clear after success
+                        navigate("/my-bookings");
+                      } else {
+                        toast.error("Payment verification failed");
+                      }
+                    }}
+                    onClose={() => {
+                      toast.error("Payment cancelled");
+                      localStorage.removeItem("paymentData"); // ✅ clear if cancelled
+                    }}
+                    text="Proceed to Pay with Paystack"
+                    className="w-full bg-green-600 text-white py-3 rounded"
+                  />
+                </div>
               )}
             </div>
           </div>
